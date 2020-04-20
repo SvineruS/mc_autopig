@@ -1,0 +1,11 @@
+name: Autopig
+version: ${project.version}
+main: svinua.autopig.Main
+api-version: "1.13"
+prefix: AutoPig
+authors: [svinerus]
+description: Programmable pig in minecraft
+website: svinua.cf
+depend: [WorldEdit]
+loadbefore:
+  - WorldEdit
