@@ -7,5 +7,4 @@ authors: [svinerus]
 description: Programmable pig in minecraft
 website: svinua.cf
 depend: [WorldEdit]
-loadbefore:
-  - WorldEdit
+softdepend: [WorldGuard]

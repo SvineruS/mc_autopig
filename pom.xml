@@ -6,7 +6,7 @@
 
     <groupId>svinua</groupId>
     <artifactId>autopig</artifactId>
-    <version>0.1-SNAPSHOT-ALPHA-BETA-HUI</version>
+    <version>0.2-SNAPSHOT-ALPHA-BETA-HUI</version>
     <packaging>jar</packaging>
 
     <name>Autopig</name>
@@ -95,6 +95,12 @@
             <groupId>com.sk89q.worldedit</groupId>
             <artifactId>worldedit-bukkit</artifactId>
             <version>7.0.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sk89q.worldguard</groupId>
+            <artifactId>worldguard-bukkit</artifactId>
+            <version>7.0.2</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

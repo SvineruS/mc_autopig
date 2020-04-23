@@ -5,6 +5,8 @@ import com.sk89q.worldedit.IncompleteRegionException;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.Region;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.flags.Flags;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -18,7 +20,7 @@ import java.util.HashMap;
 import java.util.UUID;
 
 public class AutoPig {
-    static HashMap<UUID, AutoPig> pigs = new HashMap<UUID, AutoPig>();
+    static HashMap<UUID, AutoPig> pigs = new HashMap<>();
 
     Inventory inv;
     Player owner;
@@ -56,8 +58,8 @@ public class AutoPig {
     }
 
     void quarry() {
-        LocalSession session = Main.worldEditPlugin.getSession(owner);
-        Region sel = null;
+        LocalSession session = Main.WEPlugin.getSession(owner);
+        Region sel;
         try {
             sel = session.getSelection(session.getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException e) {
@@ -70,6 +72,12 @@ public class AutoPig {
 
         ArrayList<Block> blocks = new ArrayList<>();
         for (BlockVector3 b: sel) {
+            com.sk89q.worldedit.util.Location WElocation = new com.sk89q.worldedit.util.Location(session.getSelectionWorld(), b.toVector3());
+            if (!canBreakBlock(WElocation)) {
+                owner.sendMessage("region has blocks that pig doesn't have permissions to mine");
+                return;
+            }
+
             Block block = new Location(owner.getWorld(), b.getX(), b.getY(), b.getZ()).getBlock();
             if (block.isEmpty() || block.isLiquid())
                 continue;
@@ -86,29 +94,30 @@ public class AutoPig {
         }
         Block block = blocks.get(blocks.size()-1);
 
-        Pathfinder.PathResult path = pig.getPathfinder().findPath(block.getLocation());
-        double dist;
-        try {
-            dist = path.getFinalPoint().toVector().distance(block.getLocation().toVector());
-            if (path.getPoints().size() < 2 && dist > 2)
-                throw new NullPointerException();
-        } catch (NullPointerException e) {
-            owner.sendMessage("help! i stuck");
-            return;
+        if (pig.getLocation().toVector().distance(block.getLocation().toVector()) < 2) {
+            block.breakNaturally();
+            blocks.remove(blocks.size() - 1);
+        } else {
+            Pathfinder.PathResult path = pig.getPathfinder().findPath(block.getLocation());
+            if (path == null || path.getFinalPoint().toVector().distance(block.getLocation().toVector()) > 2) {
+                owner.sendMessage("help! i stuck");
+                return;
+            }
+            pig.getPathfinder().moveTo(path);
         }
 
-        if (dist > 2) {
-            pig.getPathfinder().moveTo(path);
-        } else {
-            block.breakNaturally();
-            blocks.remove(blocks.size()-1);
-        }
 
         new BukkitRunnable() {public void run() {
             mine(blocks);
-        }}.runTaskLater(Main.instance, (long) (20*1));
+        }}.runTaskLater(Main.instance, 20);
     }
 
+
+    boolean canBreakBlock(com.sk89q.worldedit.util.Location location) {
+        if (Main.WGRegionQuery == null)
+            return true;
+        return Main.WGRegionQuery.testState(location, WorldGuardPlugin.inst().wrapPlayer(owner), Flags.BUILD);
+    }
 
 
 }
