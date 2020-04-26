@@ -6,7 +6,7 @@
 
     <groupId>svinua</groupId>
     <artifactId>autopig</artifactId>
-    <version>0.2-SNAPSHOT-ALPHA-BETA-HUI</version>
+    <version>0.3-SNAPSHOT-ALPHA-BETA-HUI</version>
     <packaging>jar</packaging>
 
     <name>Autopig</name>
