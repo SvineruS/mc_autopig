@@ -2,6 +2,9 @@ package svinua.autopig;
 
 import com.sun.istack.internal.NotNull;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -12,37 +15,49 @@ import svinua.autopig.Feature.FeatureIdle;
 import svinua.autopig.Feature.FeatureMining;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
-public class AutoPig implements InventoryHolder{
-    static HashMap<UUID, AutoPig> pigs = new HashMap<>();
 
-    public Inventory inv;
-    public Player owner;
+public class AutoPig implements InventoryHolder, ConfigurationSerializable {
+    static HashMap<String, AutoPig> PIGS = new HashMap<>();
+
     public Pig pig;
+    public Player owner;
+    public Inventory inv = Bukkit.createInventory(this, 27, "Auto Pig");
     public Feature state = new FeatureIdle(this);
+
+    AutoPig(Map<String, Object> map) {
+//        this.pig = (Pig) Bukkit.getEntity(UUID.fromString((String) map.get("pig")));
+//        this.owner = (Player) Bukkit.getEntity(UUID.fromString((String) map.get("owner")));
+//        ItemStack[] inv_items = (ItemStack[]) map.get("inv");
+//        for (int i=0; i<18; i++)
+//            this.inv.setItem(i, inv_items[i]);
+
+    }
 
     AutoPig (Pig pig, Player player) {
         this.pig = pig;
-        owner = player;
-        inv = Bukkit.createInventory(this, 27, "Auto Pig");
-        inventory();
-        make_cool();
+        this.owner = player;
+//        inventory();
+//        make_cool();
     }
 
     static AutoPig get(Pig pig, Player player) {
-        if (is_autopig(pig)) return pigs.get(pig.getUniqueId());
+        if (is_autopig(pig)) return PIGS.get(pig.getUniqueId().toString());
         return set_autopig(pig, player);
     }
 
     public static boolean is_autopig(Pig pig) {
-        return (pigs.containsKey(pig.getUniqueId()));
+        return (PIGS.containsKey(pig.getUniqueId().toString()));
     }
 
     public static AutoPig set_autopig(Pig pig, Player player) {
         AutoPig autoPig = new AutoPig(pig, player);
-        pigs.put(pig.getUniqueId(), autoPig);
+        PIGS.put("chlen", autoPig);
+//        PIGS.put(pig.getUniqueId().toString(), autoPig);
         return autoPig;
     }
 
@@ -101,5 +116,18 @@ public class AutoPig implements InventoryHolder{
 //        if (item.isSimilar(Static.DEFENCE)) mine();
 //        if (item.isSimilar(Static.RIDE)) mine();
 //        if (item.isSimilar(Static.INSTRUCTION)) mine();
+    }
+
+    @Override
+    public Map<String, Object> serialize() {
+        Map<String, Object> stringObjectHashMap = new HashMap<>();
+        ArrayList<ItemStack> inv_items = new ArrayList<>();
+        for (int i=0; i<18; i++)
+            inv_items.add(this.inv.getItem(i));
+//        stringObjectHashMap.put("inv", inv_items.toArray());
+        stringObjectHashMap.put("owner", owner.getUniqueId().toString());
+        stringObjectHashMap.put("pig", pig.getUniqueId().toString());
+//        stringObjectHashMap.put("test", new ItemStack(Material.AIR));
+        return stringObjectHashMap;
     }
 }
