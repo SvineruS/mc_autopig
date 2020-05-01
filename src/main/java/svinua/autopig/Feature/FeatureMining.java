@@ -51,7 +51,7 @@ public class FeatureMining extends Feature {
             if (selection == null)
                 throw new Exception("please select region");
 
-            pig.owner.sendMessage("mining...");
+            pig.say_to_owner("mining...");
             // todo set started
 
             while (!stopped) {
@@ -62,10 +62,10 @@ public class FeatureMining extends Feature {
                 try_mine_block(blocks.get(0));
             }
 
-            pig.owner.sendMessage("i`m done");
+            pig.say_to_owner("i`m done");
 
         } catch (Exception e) {
-            pig.owner.sendMessage(e.getMessage() + " " + e.getCause() + " " + e);
+            pig.say_to_owner(e.getMessage() + " " + e.getCause() + " " + e);
         }
         stop();
 

@@ -11,26 +11,24 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 public class EventListener implements Listener {
+
     @EventHandler
     public final void interact(PlayerInteractEntityEvent e) {
         Player player = e.getPlayer();
         if (e.getHand() == EquipmentSlot.OFF_HAND) return;  // only right hand
-
-        if (!(e.getRightClicked() instanceof Pig))
-            return;
+        if (!(e.getRightClicked() instanceof Pig)) return;
 
         Pig pig = (Pig) e.getRightClicked();
-
 
         if (!AutoPig.is_autopig(pig)) {
             if (player.getInventory().getItemInMainHand().isSimilar(Static.AUTOPIG_CREATOR)) {
                 player.getInventory().removeItem(Static.AUTOPIG_CREATOR);
-                AutoPig.get(pig, player);
+                AutoPig.create(pig, player);
             }
             return;
         }
 
-        AutoPig autoPig = AutoPig.get((Pig) e.getRightClicked(), player);
+        AutoPig autoPig = AutoPig.get_autopig(pig);
         player.openInventory(autoPig.inv);
     }
 

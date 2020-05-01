@@ -22,6 +22,10 @@ public final class Main extends JavaPlugin {
     public static Main instance;
     public static RegionQuery WGRegionQuery;
 
+    static {
+        ConfigurationSerialization.registerClass(AutoPig.class, "AutoPig");
+    }
+
     public void onEnable() {
         instance = this;
         getServer().getPluginManager().registerEvents(new EventListener(), this);
@@ -32,32 +36,23 @@ public final class Main extends JavaPlugin {
         }
 
 
-//    this.getConfig().setDefaults();
-//
-        ConfigurationSerialization.registerClass(AutoPig.class);
-        this.getConfig();
-        System.out.println(this.getConfig().get("pigs"));
-        System.out.println(this.getConfig().get("pigs2"));
-        Map<String, Object> pigs = this.getConfig().getConfigurationSection("pigs").getValues(false);
-        System.out.println(pigs.size() + "");
-        System.out.println(this.getConfig().getString("chlen"));
-        // todo
-        // load autopigs
-
+        loadPigs();
     }
 
     public void onDisable() {
-        this.getConfig().createSection("pigs", AutoPig.PIGS);
-        this.getConfig().set("chlen", "a");
-        System.out.println( AutoPig.PIGS + "");
-
-        this.saveConfig();
-
-        // todo
-        // save autopigs
-
+        savePigs();
     }
 
+
+    public void loadPigs() {
+        AutoPig.PIGS = (HashMap) getConfig().getConfigurationSection("pigs").getValues(false);
+    }
+
+
+    public void savePigs() {
+        this.getConfig().createSection("pigs", AutoPig.PIGS);
+        this.saveConfig();
+    }
 
 
 
