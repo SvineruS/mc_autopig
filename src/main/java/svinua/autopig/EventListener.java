@@ -1,14 +1,19 @@
 package svinua.autopig;
 
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockGrowEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import svinua.autopig.Feature.Feature;
+import svinua.autopig.Feature.FeatureFarmer;
 
 public class EventListener implements Listener {
 
@@ -29,7 +34,7 @@ public class EventListener implements Listener {
         }
 
         AutoPig autoPig = AutoPig.get_autopig(pig);
-        player.openInventory(autoPig.inv);
+        player.openInventory(autoPig.inv.inv);
     }
 
     @EventHandler
@@ -43,6 +48,16 @@ public class EventListener implements Listener {
                 e.setCancelled(true);
                 ((AutoPig)holder).menu_click(item);
                 return;
+            }
+        }
+    }
+
+    @EventHandler
+    public final void inventory_click(BlockGrowEvent e) {
+        BlockState block = e.getNewState();
+        for (AutoPig pig: AutoPig.PIGS.values()) {
+            if (pig.state instanceof FeatureFarmer && block.getLocation().distance(pig.pig.getLocation()) < 50) {
+                // tood
             }
         }
     }

@@ -16,6 +16,7 @@ import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import svinua.autopig.AutoPig;
 import svinua.autopig.Main;
+import svinua.autopig.PigState;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,37 +44,36 @@ public class FeatureMining extends Feature {
     void start() {
 
         try {
-            pickaxe = find_pickaxe();
-            if (pickaxe == null)
-                throw new Exception("where is my pickaxe blyad");
+            pickaxe = autopig.inv.find_pickaxe();
+            if (pickaxe == null) throw new Exception("where is my pickaxe blyad");
 
             Region selection = get_selection();
-            if (selection == null)
-                throw new Exception("please select region");
+            if (selection == null) throw new Exception("please select region");
 
-            pig.say_to_owner("mining...");
-            // todo set started
+            autopig.say_to_owner("mining...");
 
             while (!stopped) {
                 ArrayList<Block> blocks = get_blocks(selection);
-                if (blocks.isEmpty())
-                    break;
+                if (blocks.isEmpty()) break;
 
-                try_mine_block(blocks.get(0));
+                if (try_mine_block(blocks.get(0))) {
+                    autopig.eat_to_work(0.5f);
+                    damage_pickaxe();
+                };
             }
 
-            pig.say_to_owner("i`m done");
+            autopig.say_to_owner("i`m done");
 
         } catch (Exception e) {
-            pig.say_to_owner(e.getMessage() + " " + e.getCause() + " " + e);
+            autopig.say_to_owner(e.getMessage() + " " + e.getCause() + " " + e);
         }
-        stop();
+        autopig.set_state(PigState.Mine);
 
     }
 
 
     Region get_selection() {
-        LocalSession session = Main.WEPlugin.getSession(pig.owner);
+        LocalSession session = Main.WEPlugin.getSession(autopig.owner);
         try {
             return session.getSelection(session.getSelectionWorld());
         } catch (NullPointerException | IncompleteRegionException e) {
@@ -90,42 +90,41 @@ public class FeatureMining extends Feature {
             if (!check_wg_perms(WElocation))
                 throw new Exception("region has blocks that pig doesn't have permissions to mine");
 
-            Block block = new Location(pig.pig.getWorld(), b.getX(), b.getY(), b.getZ()).getBlock();
+            Block block = new Location(autopig.pig.getWorld(), b.getX(), b.getY(), b.getZ()).getBlock();
             if (!check_need_mine(block)) continue;
 
             blocks.add(block);
         }
 
-        blocks.sort(Comparator.comparing(block -> block.getLocation().distance(pig.pig.getLocation()) - block.getY() * 1000));
+        blocks.sort(Comparator.comparing(block -> block.getLocation().distance(autopig.pig.getLocation()) - block.getY() * 1000));
         return blocks;
     }
 
 
-    void try_mine_block(Block block) throws Exception {
+    boolean try_mine_block(Block block) throws Exception {
         if (is_pickaxe_broken()) throw new Exception("pickaxe nearly break");
         if (is_inventory_full()) throw new Exception("inventory full");
 
         for (int i = 0; i < 100; i++) {  // 100 attempts to move to block
-            if (pig.pig.getLocation().distance(block.getLocation()) < RANGE_TO_MINE) break;
+            if (autopig.pig.getLocation().distance(block.getLocation()) < RANGE_TO_MINE) break;
             if (!Bukkit.getScheduler().callSyncMethod(Main.instance, () -> move_to_block(block)).get()) continue;
             Thread.sleep(TIME_TO_MOVE);
         }
 
         Thread.sleep((long) get_block_break_time(block));
-        if (Bukkit.getScheduler().callSyncMethod(Main.instance, () -> block.breakNaturally(pickaxe, true)).get())
-            damage_pickaxe();
+        return Bukkit.getScheduler().callSyncMethod(Main.instance, () -> block.breakNaturally(pickaxe, true)).get();
     }
 
 
 
     boolean move_to_block(Block block) {
-        Pathfinder.PathResult path = pig.pig.getPathfinder().findPath(block.getLocation());
+        Pathfinder.PathResult path = autopig.pig.getPathfinder().findPath(block.getLocation());
         if (path == null)
             return false;
         if (path.getFinalPoint().toVector().distance(block.getLocation().toVector()) > RANGE_TO_MINE)
             return false;
 
-        pig.pig.getPathfinder().moveTo(path);
+        autopig.pig.getPathfinder().moveTo(path);
         return true;
     }
 
@@ -133,7 +132,7 @@ public class FeatureMining extends Feature {
     boolean check_wg_perms(com.sk89q.worldedit.util.Location location) {
         if (Main.WGRegionQuery == null)
             return true;
-        return Main.WGRegionQuery.testState(location, WorldGuardPlugin.inst().wrapPlayer(pig.owner), Flags.BUILD);
+        return Main.WGRegionQuery.testState(location, WorldGuardPlugin.inst().wrapPlayer(autopig.owner), Flags.BUILD);
     }
 
     boolean check_need_mine(Block block) {
@@ -142,18 +141,9 @@ public class FeatureMining extends Feature {
 
     boolean can_safe_break_block(Block block) {
         return !(block.getType().toString().toLowerCase().contains("ore") &&
-                block.getDrops(pickaxe, pig.owner).isEmpty());
+                block.getDrops(pickaxe, autopig.owner).isEmpty());
     }
 
-    ItemStack find_pickaxe() {
-        ItemStack[] items = pig.inv.getContents();
-        for (int i=0; i<9*2; i++) {
-            ItemStack item = items[i];
-            if (item == null) continue;
-            if (item.getType().toString().toLowerCase().contains("pickaxe")) return item;
-        }
-        return null;
-    }
 
     boolean is_pickaxe_broken() {
         return ((Damageable) pickaxe.getItemMeta()).getDamage() >= pickaxe.getType().getMaxDurability() - 5;// i hate new bukkit

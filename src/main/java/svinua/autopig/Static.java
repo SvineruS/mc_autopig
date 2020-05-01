@@ -7,6 +7,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.Arrays;
 
 public class Static {
+    public static final ItemStack PIG_FOOD = new ItemStack(Material.CARROT, 1);
+
     final static ItemStack INSTRUCTION = item(Material.BOOK, "ИНСТРУКЦИЯ",
             "Тут будет инструкция"
     );

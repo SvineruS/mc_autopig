@@ -3,16 +3,16 @@ package svinua.autopig.Feature;
 import svinua.autopig.AutoPig;
 
 public abstract class Feature {
-    public AutoPig pig;
+    public AutoPig autopig;
     boolean stopped = false;
 
     public Feature(AutoPig pig) {
-        this.pig = pig;
+        this.autopig = pig;
     }
 
     public void stop() {
         stopped = true;
-        pig.set_state(FeatureIdle.class);
+//        autopig.set_state(FeatureIdle.class);
     };
 
     public abstract String get_name();

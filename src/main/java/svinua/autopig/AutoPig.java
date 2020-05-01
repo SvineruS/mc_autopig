@@ -1,18 +1,14 @@
 package svinua.autopig;
 
-import com.sun.istack.internal.NotNull;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import svinua.autopig.Feature.Feature;
 import svinua.autopig.Feature.FeatureIdle;
-import svinua.autopig.Feature.FeatureMining;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -23,20 +19,20 @@ import java.util.UUID;
 
 
 @SerializableAs("AutoPig")
-public class AutoPig implements InventoryHolder, ConfigurationSerializable {
+public class AutoPig implements ConfigurationSerializable {
     static HashMap<String, AutoPig> PIGS = new HashMap<>();
 
     public Pig pig;
     public Player owner;
-    public Inventory inv = Bukkit.createInventory(this, 27, "Auto Pig");
+    public PigInventory inv;
     public Feature state = new FeatureIdle(this);
+    public float food_saturation;
 
 
 
     AutoPig (Pig pig, Player player) {
         this.pig = pig;
         this.owner = player;
-        put_menu_in_inventory();
     }
 
     public static AutoPig create(Pig pig, Player player) {
@@ -68,7 +64,7 @@ public class AutoPig implements InventoryHolder, ConfigurationSerializable {
 
 
     public void menu_click(ItemStack item) {
-        if (item.isSimilar(Static.MINING))  set_state(FeatureMining.class);
+        if (item.isSimilar(Static.MINING))  set_state(PigState.Mine);
         // todo
 //        if (item.isSimilar(Static.FISHING)) mine();
 //        if (item.isSimilar(Static.DEFENCE)) mine();
@@ -76,14 +72,17 @@ public class AutoPig implements InventoryHolder, ConfigurationSerializable {
 //        if (item.isSimilar(Static.INSTRUCTION)) mine();
     }
 
-    public void set_state(Class<? extends Feature> new_state_class) {
-        if (state.getClass() == new_state_class) {
+    public void set_state(PigState new_state) {
+        if (state.getClass() == new_state.class_) {
             say_to_owner("already this state");
             return;
         }
+        state.stop();
+
+
         try {
-            state = new_state_class.getConstructor(AutoPig.class).newInstance(this);
-        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException ignored) {}
+            state = new_state.constructor.newInstance(this);
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException ignored) {}
 
         set_name();
     }
@@ -92,29 +91,27 @@ public class AutoPig implements InventoryHolder, ConfigurationSerializable {
         pig.setCustomName("Auto Pig (" + owner.getName() + ") - " + state.get_name());
     }
 
-    void put_menu_in_inventory() {
-        inv.setItem(26, Static.INSTRUCTION);
-        inv.setItem(18, Static.MINING);
-        inv.setItem(19, Static.FISHING);
-        inv.setItem(20, Static.DEFENCE);
-        inv.setItem(21, Static.RIDE);
+
+    public boolean eat_to_work(float need) {
+        if (food_saturation < need) {
+            if (!inv.inv.removeItem(Static.PIG_FOOD).isEmpty()) // eat
+                return false;
+            food_saturation += 1;
+        }
+        food_saturation -= need;
+        return true;
+
     }
 
 
-    @Override
-    public Inventory getInventory() {
-        return inv;
-    }
 
     @Override
     public Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
-        ArrayList<ItemStack> inv_items = new ArrayList<>();
-        for (int i=0; i<18; i++)
-            inv_items.add(this.inv.getItem(i));
+
         map.put("pig", pig.getUniqueId().toString());
         map.put("owner", owner.getUniqueId().toString());
-        map.put("inv", inv_items.toArray());
+        map.put("inv", inv.get_items().toArray());
         return map;
     }
 
@@ -122,9 +119,7 @@ public class AutoPig implements InventoryHolder, ConfigurationSerializable {
         Pig pig = (Pig) Bukkit.getEntity(UUID.fromString((String) map.get("pig")));
         Player owner = (Player) Bukkit.getEntity(UUID.fromString((String) map.get("owner")));
         AutoPig autopig = new AutoPig(pig, owner);
-        ArrayList<ItemStack> inv_items = (ArrayList<ItemStack>) map.get("inv");
-        for (int i=0; i<18; i++)
-            autopig.inv.setItem(i, inv_items.get(i));
+        autopig.inv.set_items((ArrayList<ItemStack>) map.get("inv"));
 
         return autopig;
 
